@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"encoding/json"
+	"html/template"
 )
+
+// JSON data structs
 
 type Input struct {
 	A float32 `json:"a"`
@@ -15,8 +18,22 @@ type Output struct {
 	Ans float32 `json:"ans"`
 }
 
+// HTML template structs
+
+type APIKeyPageData struct {
+	APIKey string
+	Exists bool
+}
+
+// In-memory cache of valid API keys and their owners
+var keyCache = make(map[string]string)
+
 func main() {
 	router := http.NewServeMux()
+
+	// Serve routes for the interface
+	router.HandleFunc("/", handleHome)
+	router.HandleFunc("/getkey", handleKeyPost)
 	
 	// Define the routes we'll serve for the API
 	router.HandleFunc("POST /add", handleAdd)
@@ -24,11 +41,40 @@ func main() {
 	router.HandleFunc("POST /multiply", handleMultiply)
 	router.HandleFunc("POST /divide", handleDivide)
 
-	// Also serve routes for the interface
-	router.HandleFunc("/", handleHome)
 
 	fmt.Println("Now listening on http://localhost:8080")
 	http.ListenAndServe(":8080", router)
+}
+
+func handleHome(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("pages/home.html"))
+	tmpl.Execute(w, "")		// No data for templating, just render page
+}
+
+func handleKeyPost(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	email := r.Form["email"][0]
+
+	var exists bool
+	var key string
+
+	if val, ok := keyCache[email]; ok {
+		exists = true
+		key = val
+	} else {
+		exists = false
+		key = generateKey()
+		keyCache[email] = key
+	}
+
+
+	tmpl := template.Must(template.ParseFiles("pages/getkey.html"))
+	data := APIKeyPageData{
+		APIKey: key,
+		Exists: exists,
+	}
+	tmpl.Execute(w, data)
 }
 
 
