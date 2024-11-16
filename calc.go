@@ -18,11 +18,14 @@ type Output struct {
 func main() {
 	router := http.NewServeMux()
 	
-	// Define the routes we'll serve
+	// Define the routes we'll serve for the API
 	router.HandleFunc("POST /add", handleAdd)
 	router.HandleFunc("POST /subtract", handleSubtract)
 	router.HandleFunc("POST /multiply", handleMultiply)
 	router.HandleFunc("POST /divide", handleDivide)
+
+	// Also serve routes for the interface
+	router.HandleFunc("/", handleHome)
 
 	fmt.Println("Now listening on http://localhost:8080")
 	http.ListenAndServe(":8080", router)
