@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"encoding/json"
 	"html/template"
+
+	"github.com/Ned-Arthur/calc/middleware"
 )
 
 // JSON data structs
@@ -27,6 +29,7 @@ type APIKeyPageData struct {
 
 // In-memory cache of valid API keys and their owners
 var keyCache = make(map[string]string)
+var emailCache = make(map[string]string)
 
 func main() {
 	router := http.NewServeMux()
@@ -36,14 +39,19 @@ func main() {
 	router.HandleFunc("/getkey", handleKeyPost)
 	
 	// Define the routes we'll serve for the API
-	router.HandleFunc("POST /add", handleAdd)
-	router.HandleFunc("POST /subtract", handleSubtract)
-	router.HandleFunc("POST /multiply", handleMultiply)
-	router.HandleFunc("POST /divide", handleDivide)
+	router.HandleFunc("POST /add/{api_key}", handleAdd)
+	router.HandleFunc("POST /subtract/{api_key}", handleSubtract)
+	router.HandleFunc("POST /multiply/{api_key}", handleMultiply)
+	router.HandleFunc("POST /divide/{api_key}", handleDivide)
 
+
+	server := http.Server{
+		Addr: ":8080",
+		Handler: middleware.Logging(router),
+	}
 
 	fmt.Println("Now listening on http://localhost:8080")
-	http.ListenAndServe(":8080", router)
+	server.ListenAndServe()
 }
 
 func handleHome(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +74,7 @@ func handleKeyPost(w http.ResponseWriter, r *http.Request) {
 		exists = false
 		key = generateKey()
 		keyCache[email] = key
+		emailCache[key] = email
 	}
 
 
@@ -77,8 +86,28 @@ func handleKeyPost(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, data)
 }
 
+// Check that the API key is valid, returning a message to describe why it isn't 
+func validateAPIKey(r *http.Request) string {
+	key := r.PathValue("api_key")
+	if len(key) != KEYLENGTH {
+		return "400 - API key is incorrect length"
+	}
+	if _, ok := emailCache[key]; !ok {
+		return "400 - invalid API key"
+	}
+
+	return ""
+}
 
 func handleAdd(w http.ResponseWriter, r *http.Request) {
+	// Validate API key
+	errcode := validateAPIKey(r)
+	if errcode != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errcode))
+		return
+	}
+
 	// Get input
 	var input Input
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -94,6 +123,14 @@ func handleAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSubtract(w http.ResponseWriter, r *http.Request) {
+	// Validate API key
+	errcode := validateAPIKey(r)
+	if errcode != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errcode))
+		return
+	}
+
 	// Get input
 	var input Input
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -109,6 +146,14 @@ func handleSubtract(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMultiply(w http.ResponseWriter, r *http.Request) {
+	// Validate API key
+	errcode := validateAPIKey(r)
+	if errcode != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errcode))
+		return
+	}
+
 	// Get input
 	var input Input
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -124,6 +169,14 @@ func handleMultiply(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDivide(w http.ResponseWriter, r *http.Request) {
+	// Validate API key
+	errcode := validateAPIKey(r)
+	if errcode != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errcode))
+		return
+	}
+
 	// Get input
 	var input Input
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -135,7 +188,7 @@ func handleDivide(w http.ResponseWriter, r *http.Request) {
 	// Spit an error if we can't divide by 0
 	if input.B == 0.0 {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Can't divide by 0"))
+		w.Write([]byte("400 - Can't divide by zero"))
 		return
 	}
 

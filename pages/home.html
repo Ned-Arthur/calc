@@ -14,6 +14,20 @@
 			<input type="text" id="email" name="email" required><br>
 			<input type="submit" value="Generate Key!">
 		</form>
+
+		<h2>Make a Request</h2>
+		<p>We support POST requests for the follwoing endponts, each followed by your valid API key:</p>
+		<ul>
+			<li><code>/add/</code></li>
+			<li><code>/subtract/</code></li>
+			<li><code>/multiply/</code></li>
+			<li><code>/divide/</code></li>
+		</ul>
+		<p>The body of the request should be a JSON object with fields "a" and "b" containing the two numbers. For example, to add 3 to 4 you would POST the following body to /add/{your_key_here}:</p>
+		<code>{"a":3, "b":4}</code>
+		<p>Which would yield a response of:</p>
+		<code>{"ans":7}</code>
+		<p>If you make a mistake in your request you will likely get an error code 400 with a description of what you did wrong.</p>
 	</body>
 </html>
 

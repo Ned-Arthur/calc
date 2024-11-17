@@ -1,0 +1,18 @@
+package middleware
+
+import (
+	"log"
+	"net/http"
+	"time"
+)
+
+// Log out the method, path, and time taken to complete a request
+func Logging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		log.Println(r.Method, r.URL.Path, time.Since(start))
+	})
+}
+
+

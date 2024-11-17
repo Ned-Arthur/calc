@@ -5,14 +5,14 @@ import (
 	"encoding/base64"
 )
 
-const keyLength = 32
+const KEYLENGTH = 32
 
 func generateKey() string {
-	bytes := make([]byte, keyLength)
+	bytes := make([]byte, KEYLENGTH)
 	_, err := rand.Read(bytes)
 	if err != nil {
 		panic(err)
 	}
 
-	return base64.URLEncoding.EncodeToString(bytes)[:keyLength]
+	return base64.URLEncoding.EncodeToString(bytes)[:KEYLENGTH]
 }
