@@ -1,0 +1,16 @@
+<html>
+	<head>
+		<title>Calc API - Generate Key</title>
+	</head>
+
+	<body>
+		<h1>New API Key</h1>
+		{{if .Exists}}
+			<p>You already have a key linked to this email, here it is:</p>
+		{{else}}
+			<p>This key is linked to your email. Reapply with the same email to get the same API key again. Your new API key is:</p>
+		{{end}}
+
+		<code>{{.APIKey}}</code>
+	</body>
+</html>
